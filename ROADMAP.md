@@ -63,6 +63,7 @@ Each phase ends with something demoable — this matters both for motivation and
 - Integrate Claude API as an "AI node" type: classification, structured extraction, summarization to start.
 - Log AI latency, token cost, and output per execution (this feeds your Engineering Metrics later).
 - Validation layer after AI output, before it's allowed to affect routing — this is the "AI recommends, rules decide" architecture from the proposal, and it's a great interview talking point.
+- Consider the posibility of using pnpm instead of npm.
 
 **Demo:** Submit a support ticket via a form → AI classifies category/priority → workflow routes based on that classification, with the AI's reasoning visible in the execution log.
 
@@ -95,6 +96,7 @@ Each phase ends with something demoable — this matters both for motivation and
 - Terraform for the AWS resources you're already running (infra-as-code retrofit).
 - SaaS scaffolding: subscription plans (Stripe test mode), usage tracking, API keys, minimal public API docs.
 - Test coverage push: unit + integration + a handful of E2E tests (Playwright).
+- Production-style build instead of Hot-Reload Build
 
 **Demo:** A polished, monitored, tested, documented product with a public API — this is your "portfolio-ready" state.
 
