@@ -28,6 +28,8 @@ services:
   backend:
     build:
       context: ./apps/api
+    env_file:
+      - ./apps/api/.env
     ports:
       - "8080:8080"
     environment:

@@ -1,6 +1,12 @@
 spring:
   application:
     name: api
+  # Native config import so a bare `./mvnw spring-boot:run` reads apps/api/.env
+  # (Spring does not read .env natively). `optional:` makes it a no-op when .env
+  # is absent (CI/prod supply JWT_SECRET as a real env var). In docker-compose the
+  # same value also arrives via env_file; OS env wins, values match, no conflict.
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/orchestrate
     username: postgres
@@ -15,3 +21,15 @@ spring:
 
 server:
   port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-ttl: PT15M
+    refresh-ttl: P7D
+  cookies:
+    secure: false # dev only; MUST be overridden to true in prod — deferred to deploy phase (no application-prod.yml in this task)
+    same-site: Lax
+  tokens:
+    email-verification-ttl: PT24H
+    password-reset-ttl: PT1H
