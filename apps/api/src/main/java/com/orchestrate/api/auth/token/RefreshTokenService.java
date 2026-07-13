@@ -47,6 +47,13 @@ public class RefreshTokenService {
   /**
    * Look up an active token by its raw value. Throws {@link InvalidTokenException} if unknown,
    * expired, or revoked; a revoked hit triggers reuse-detection (revoke all of the user's tokens).
+   *
+   * <p>// TODO(security-followup): reuse-detection has a concurrent-replay race under READ
+   * COMMITTED isolation — two simultaneous refresh calls on the same token can both read
+   * revokedAt==null before either commits, minting two valid children without triggering reuse
+   * detection. Needs pessimistic locking (@Lock(PESSIMISTIC_WRITE) on the token lookup) or
+   * optimistic locking (@Version + retry-on-conflict) before this is closed against concurrent
+   * attackers. Tracked as a separate follow-up, not part of this PR.
    */
   @Transactional
   public RefreshToken verifyActive(String rawToken) {
@@ -69,7 +76,12 @@ public class RefreshTokenService {
     return token;
   }
 
-  /** Rotate: mint a replacement token, revoke the current one, and link the lineage. */
+  /**
+   * Rotate: mint a replacement token, revoke the current one, and link the lineage.
+   *
+   * <p>// TODO(security-followup): see the race-condition note on {@link #verifyActive} — this is
+   * the write half of that unlocked read-then-write sequence.
+   */
   @Transactional
   public String rotate(RefreshToken current) {
     String raw = hasher.generateRawToken();

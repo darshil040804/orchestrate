@@ -1,8 +1,9 @@
 package com.orchestrate.api.auth.dto;
 
+import com.orchestrate.api.auth.validation.MaxUtf8Bytes;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record SignupRequest(
-    @Email @NotBlank String email, @NotBlank @Size(min = 8, max = 72) String password) {}
+    @Email @NotBlank String email, @NotBlank @Size(min = 8) @MaxUtf8Bytes(72) String password) {}
