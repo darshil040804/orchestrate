@@ -109,6 +109,32 @@ public class AuthService {
     return issueTokens(user);
   }
 
+  /**
+   * Find-or-create a user for an OAuth login whose email the provider has already verified (Google
+   * via the OIDC {@code email_verified} claim, GitHub via {@link
+   * com.orchestrate.api.auth.oauth.GitHubOAuth2UserService}'s verified-email lookup), then issue
+   * tokens via the exact same path as password login.
+   *
+   * <p>Auto-links by email: if a User already exists for this email — whether it was created via
+   * password signup or a different OAuth provider — that existing account is reused. No explicit
+   * linking step, no rejection.
+   */
+  @Transactional
+  public OAuthLoginResult loginOrSignupViaOAuth(String rawEmail) {
+    String email = normalize(rawEmail);
+    User user = userRepository.findByEmail(email).orElse(null);
+    boolean newAccount = user == null;
+    if (user == null) {
+      user = new User(email, null);
+      user.setEmailVerified(true);
+      user = userRepository.save(user);
+    } else if (!user.isEmailVerified()) {
+      user.setEmailVerified(true);
+      user = userRepository.save(user);
+    }
+    return new OAuthLoginResult(issueTokens(user), newAccount);
+  }
+
   @Transactional
   public IssuedTokens refresh(String rawRefreshToken) {
     RefreshToken current = refreshTokenService.verifyActive(rawRefreshToken);
@@ -196,4 +222,7 @@ public class AuthService {
 
   /** Bundle of freshly-issued credentials the controller turns into cookies. */
   public record IssuedTokens(String accessToken, String refreshToken, User user) {}
+
+  /** Result of an OAuth login: the issued tokens, plus whether a new account was just created. */
+  public record OAuthLoginResult(IssuedTokens tokens, boolean newAccount) {}
 }

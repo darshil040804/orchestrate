@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Strongly-typed binding for the {@code app.*} config block in application.yml. */
 @ConfigurationProperties(prefix = "app")
-public record AppProperties(Jwt jwt, Cookies cookies, Tokens tokens) {
+public record AppProperties(String frontendUrl, Jwt jwt, Cookies cookies, Tokens tokens) {
 
   public record Jwt(String secret, Duration accessTtl, Duration refreshTtl) {}
 
