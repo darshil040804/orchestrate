@@ -32,71 +32,79 @@ A phased plan for building Orchestrate as a portfolio-grade, resume-worthy full-
 
 Each phase ends with something demoable — this matters both for motivation and for resume/interview talking points ("I shipped X, then Y").
 
-### Phase 0 — Foundations (Weeks 1–2)
-- Monorepo layout: `apps/web` (Next.js), `apps/api` (Spring Boot), `packages/` for shared types/OpenAPI spec if needed.
-- Docker Compose for local dev: Postgres, Redis, backend, frontend.
-- GitHub Actions: lint + build on every PR (no deploy yet).
-- `CLAUDE.md` at repo root (see Section 4).
-- Decide and document API contract style (REST + OpenAPI).
+**Frontend scoping policy:** each phase includes a frontend slice only where it produces a surface a real user (not just an API client) interacts with directly; purely internal/backend machinery (e.g. the execution engine walking a workflow graph) doesn't get one. Phase 1's slices (1a–1d) were verified API-only via curl — Phase 1e below retroactively closes that gap before Phase 2 begins, and every phase from here on states its frontend scope explicitly rather than leaving it implicit.
 
-**Demo at end:** `docker compose up` boots a working "hello world" full stack with a health-check endpoint.
+### Phase 1 — Auth & Organizations (Weeks 3–6) — backend complete
+- Email/password auth, email verification, password reset. ✅ (1a)
+- Google + GitHub OAuth. ✅ (1b)
+- Multi-tenancy: Organizations, RBAC (owner/admin/member/approver roles). ✅ (1c)
+  - **Descoped:** Workspaces and Teams sub-org hierarchy — deliberately deferred at 1c kickoff to avoid building unused hierarchy into an MVP. Revisit only if a concrete feature need emerges; hard checkpoint to re-evaluate no later than Phase 5, when the data model gets reviewed holistically for reporting/scoping needs.
+- Invitations flow. ✅ (1d)
+- JWT issuance, refresh tokens, Spring Security config. ✅ (1a)
 
-### Phase 1 — Auth & Organizations (Weeks 3–6)
-- Email/password auth, email verification, password reset.
-- Google + GitHub OAuth.
-- Multi-tenancy: Organizations, Workspaces, Teams, RBAC (owner/admin/member/approver roles).
-- Invitations flow.
-- JWT issuance, refresh tokens, Spring Security config.
+**Demo:** Sign up, verify email, create an org, invite a teammate, log in via GitHub OAuth. All verified via API to date — Phase 1e below makes this demoable through an actual UI.
 
-**Demo:** Sign up, verify email, create an org, invite a teammate, log in via GitHub OAuth.
+### Phase 1e — Frontend for Auth & Organizations (Weeks 7–8)
+Closes the gap above: Phase 1's backend has no UI yet. Split the same way 1a–1d were:
+- 1e-i: auth screens — login, signup, email-verify landing, password-reset request/confirm, Google/GitHub OAuth buttons.
+- 1e-ii: org screens — create org, org switcher/list, member roster, role management, remove member.
+- 1e-iii: invitation screens — accept-invite page, admin invite-management panel.
 
-### Phase 2 — Workflow Engine core (Weeks 7–13)
+**Demo:** A human can click through signup → email verification → org creation → inviting a teammate → GitHub OAuth login, with no curl involved.
+
+### Phase 2 — Workflow Engine core (Weeks 9–15)
 - Workflow data model: triggers, nodes (start simple — trigger, decision, notification, approval, AI), edges.
 - Workflow versioning: publish = immutable; edits create new draft version.
-- Execution engine: a worker process (can be a Spring `@Scheduled`/queue consumer to start) that walks a workflow graph, records state transitions.
+- Execution engine: a worker process (can be a Spring `@Scheduled`/queue consumer to start) that walks a workflow graph, records state transitions. *(No dedicated frontend — internal machinery.)*
 - Every execution logs timestamps, node history, retries, failures to Postgres.
-- Basic internal UI to build a workflow as JSON/form-based config (visual drag-and-drop builder is a stretch goal — don't build it yet).
+- Frontend: a basic workflow builder (JSON/form-based config — visual drag-and-drop is a stretch goal, don't build it yet) and an execution history view.
 
-**Demo:** Define a workflow with a trigger → decision → notification chain, run it, see full execution history.
+**Demo:** Define a workflow with a trigger → decision → notification chain through the UI, run it, see full execution history rendered, not just logged.
 
-### Phase 3 — AI Engine (Weeks 14–17)
+### Phase 3 — AI Engine (Weeks 16–19)
 - Integrate Claude API as an "AI node" type: classification, structured extraction, summarization to start.
-- Log AI latency, token cost, and output per execution (this feeds your Engineering Metrics later).
-- Validation layer after AI output, before it's allowed to affect routing — this is the "AI recommends, rules decide" architecture from the proposal, and it's a great interview talking point.
+- Log AI latency, token cost, and output per execution (feeds Engineering Metrics later).
+- Validation layer after AI output, before it's allowed to affect routing — the "AI recommends, rules decide" architecture from the proposal, a strong interview talking point.
 - Consider the posibility of using pnpm instead of npm.
+- Frontend: a ticket-submission form (public), and the execution log view extended to surface AI reasoning/classification per step.
 
-**Demo:** Submit a support ticket via a form → AI classifies category/priority → workflow routes based on that classification, with the AI's reasoning visible in the execution log.
+**Demo:** Submit a support ticket via a form → AI classifies category/priority → workflow routes based on that classification, with the AI's reasoning visible in the execution log UI.
 
-### Phase 4 — Human Approval & Forms (Weeks 18–21)
+### Phase 4 — Human Approval & Forms (Weeks 20–23)
 - Approval nodes: pause execution, notify approver, resume on approve/reject/request-changes/delegate.
 - Public + internal forms with validation and conditional fields (file upload can wait).
 - Email notifications (start with just email — Slack is Phase 6).
+- Frontend: a form builder/renderer, and an approvals inbox UI (approve/reject/request-changes/delegate actions).
 
-**Demo:** A purchase-request workflow: form submission → AI drafts a summary → manager approval required above a threshold → execution resumes on approval.
+**Demo:** A purchase-request workflow: form submission → AI drafts a summary → manager approval required above a threshold, actioned through the approvals inbox → execution resumes on approval.
 
-### Phase 5 — Dashboard, Audit Trail, Analytics, Search (Weeks 22–26)
+### Phase 5 — Dashboard, Audit Trail, Analytics, Search (Weeks 24–28)
 - Dashboard: active runs, pending approvals, failures, processing times.
 - Audit trail: every meaningful event recorded and queryable.
 - Analytics: completion time, bottlenecks, approval delays, automation %.
-- Basic search across workflows/submissions/audit logs (Postgres full-text search is enough — skip vector search for now).
+- Basic search across workflows/submissions/audit logs (Postgres full-text search — skip vector search for now).
+- Frontend: the dashboard, audit trail viewer, and analytics/search UI *are* this phase's deliverable, not an add-on.
+- **Checkpoint:** re-evaluate the deferred Workspaces/Teams decision here (see Phase 1 note) while reviewing the data model holistically.
 
 **Demo:** A real dashboard you'd screenshot for a portfolio site — this is your "looks like a real product" milestone.
 
-### Phase 6 — Integrations, phase two (Weeks 27–32)
+### Phase 6 — Integrations, phase two (Weeks 29–34)
 - Slack notifications + Slack approval actions.
 - Webhooks (inbound trigger + outbound action) done properly, with retries and signature verification.
 - Pick one more: Google Sheets or Gmail, whichever tells a better story for your target use case (e.g., invoice processing → Sheets export).
+- Frontend: an integrations settings page (connect Slack, configure webhooks/the chosen integration).
 
 **Demo:** A workflow that notifies via Slack and lets someone approve from a Slack button.
 
-### Phase 7 — Hardening & SaaS polish (Weeks 33–40+)
+### Phase 7 — Hardening & SaaS polish (Weeks 35–42+)
 - Observability: Prometheus + Grafana dashboards for API latency, workflow duration, failure rate.
 - Security pass: use the `security-review` skill/process against your own repo, fix findings, document the process (great resume bullet).
 - Load testing (k6 or similar) against the workflow execution path; publish numbers.
 - Terraform for the AWS resources you're already running (infra-as-code retrofit).
 - SaaS scaffolding: subscription plans (Stripe test mode), usage tracking, API keys, minimal public API docs.
-- Test coverage push: unit + integration + a handful of E2E tests (Playwright).
-- Production-style build instead of Hot-Reload Build
+- Test coverage push: unit + integration + a handful of E2E tests (Playwright) — include the org last-owner concurrency regression test from Phase 1c here.
+- Production-style build instead of Hot-Reload Build.
+- Frontend: billing/subscription page, API key management page.
 
 **Demo:** A polished, monitored, tested, documented product with a public API — this is your "portfolio-ready" state.
 

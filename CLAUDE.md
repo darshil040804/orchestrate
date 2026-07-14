@@ -8,7 +8,7 @@ Orchestrate — AI-assisted workflow automation SaaS for building reliable, huma
 
 ## Current status
 
-**Phase 0 (Foundations) completed**. 4 containers are set up (Frontend, Backend, Postgres, Redis). Everything is Healthy. curl http://localhost:8080/api/health returns {'status' : 'ok'}. http://localhost:3000 in browser shows the card with status: ok. Hot reload works as expected. 
+**Phase 1 in progress**.
 
 ## Planned tech stack
 

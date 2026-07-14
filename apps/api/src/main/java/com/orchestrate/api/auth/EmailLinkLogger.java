@@ -1,5 +1,6 @@
 package com.orchestrate.api.auth;
 
+import com.orchestrate.api.config.AppProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,21 +17,25 @@ public class EmailLinkLogger {
 
   private static final Logger log = LoggerFactory.getLogger(EmailLinkLogger.class);
 
-  // Base URL of the API; verification/reset are API endpoints for now (no frontend pages yet).
-  private static final String BASE_URL = "http://localhost:8080";
+  private final AppProperties props;
+
+  public EmailLinkLogger(AppProperties props) {
+    this.props = props;
+  }
 
   public void sendVerificationLink(String email, String rawToken) {
     log.info(
-        "[EMAIL:verify] To={} — verify: {}/api/auth/verify-email?token={}",
+        "[EMAIL:verify] To={} — verify: {}/verify-email?token={}",
         email,
-        BASE_URL,
+        props.frontendUrl(),
         rawToken);
   }
 
   public void sendPasswordResetLink(String email, String rawToken) {
     log.info(
-        "[EMAIL:reset] To={} — reset token (POST /api/auth/password-reset/confirm): {}",
+        "[EMAIL:reset] To={} — reset: {}/reset-password/confirm?token={}",
         email,
+        props.frontendUrl(),
         rawToken);
   }
 
