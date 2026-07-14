@@ -1,5 +1,6 @@
 package com.orchestrate.api.error;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -82,6 +83,33 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(OwnerActionRequiredException.class)
   public ResponseEntity<ErrorResponse> handleOwnerActionRequired(OwnerActionRequiredException ex) {
     return build(HttpStatus.FORBIDDEN, "OWNER_ACTION_REQUIRED", ex.getMessage());
+  }
+
+  @ExceptionHandler(InvitationNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleInvitationNotFound(InvitationNotFoundException ex) {
+    return build(HttpStatus.NOT_FOUND, "INVITATION_NOT_FOUND", ex.getMessage());
+  }
+
+  @ExceptionHandler(InvitationEmailMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleInvitationEmailMismatch(
+      InvitationEmailMismatchException ex) {
+    return build(HttpStatus.FORBIDDEN, "INVITATION_EMAIL_MISMATCH", ex.getMessage());
+  }
+
+  /**
+   * Generic backstop for unhandled DB-constraint races (e.g. two concurrent inserts colliding on a
+   * unique index/constraint after both passed an application-level pre-check) — turns what would
+   * otherwise be an unhandled 500 into a proper 409 response shape. The underlying data is never
+   * corrupted in these cases (the losing transaction rolls back cleanly); this only improves the
+   * response contract.
+   */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+      DataIntegrityViolationException ex) {
+    return build(
+        HttpStatus.CONFLICT,
+        "CONFLICT",
+        "The request could not be completed due to a conflicting change");
   }
 
   private ResponseEntity<ErrorResponse> build(HttpStatus status, String code, String message) {

@@ -46,3 +46,4 @@ app:
   tokens:
     email-verification-ttl: PT24H
     password-reset-ttl: PT1H
+    org-invitation-ttl: P7D # longer than the above: turnaround depends on the invitee, not a single security-sensitive action

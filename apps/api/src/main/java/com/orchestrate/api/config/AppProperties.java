@@ -11,5 +11,6 @@ public record AppProperties(String frontendUrl, Jwt jwt, Cookies cookies, Tokens
 
   public record Cookies(boolean secure, String sameSite) {}
 
-  public record Tokens(Duration emailVerificationTtl, Duration passwordResetTtl) {}
+  public record Tokens(
+      Duration emailVerificationTtl, Duration passwordResetTtl, Duration orgInvitationTtl) {}
 }

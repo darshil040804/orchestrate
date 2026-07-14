@@ -33,4 +33,12 @@ public class EmailLinkLogger {
         email,
         rawToken);
   }
+
+  public void sendOrgInvitationLink(String email, String orgName, String rawToken) {
+    log.info(
+        "[EMAIL:invite] To={} — invited to '{}'. Accept (POST /api/invitations/accept): {}",
+        email,
+        orgName,
+        rawToken);
+  }
 }
