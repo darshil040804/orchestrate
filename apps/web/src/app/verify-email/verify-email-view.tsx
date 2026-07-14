@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServerErrorBanner } from "@/components/auth/server-error-banner";
+import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { ApiError } from "@/lib/api/client";
 import { verifyEmail } from "@/lib/api/auth";
 import { mapAuthError } from "@/lib/auth/errors";

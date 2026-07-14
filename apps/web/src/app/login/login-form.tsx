@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ServerErrorBanner } from "@/components/auth/server-error-banner";
+import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { ApiError } from "@/lib/api/client";
 import { login } from "@/lib/api/auth";

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServerErrorBanner } from "@/components/auth/server-error-banner";
+import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { requestPasswordReset } from "@/lib/api/auth";
 import { resetRequestSchema, type ResetRequestValues } from "@/lib/auth/validation";
 

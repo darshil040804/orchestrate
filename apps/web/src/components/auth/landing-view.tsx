@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServerErrorBanner } from "@/components/auth/server-error-banner";
+import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { logout } from "@/lib/api/auth";
 import { mapAuthError } from "@/lib/auth/errors";
@@ -36,6 +36,9 @@ export function LandingView({ oauthError }: { oauthError?: string }) {
               <p>
                 Logged in as <span className="font-medium">{user.email}</span>
               </p>
+              <Link href="/orgs" className="underline underline-offset-4">
+                Organizations
+              </Link>
               <Button
                 variant="outline"
                 onClick={() => logoutMutation.mutate()}

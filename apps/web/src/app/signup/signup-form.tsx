@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServerErrorBanner } from "@/components/auth/server-error-banner";
+import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { ApiError } from "@/lib/api/client";
 import { signup } from "@/lib/api/auth";
 import { mapAuthError } from "@/lib/auth/errors";
