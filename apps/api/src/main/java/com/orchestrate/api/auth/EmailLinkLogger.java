@@ -41,9 +41,10 @@ public class EmailLinkLogger {
 
   public void sendOrgInvitationLink(String email, String orgName, String rawToken) {
     log.info(
-        "[EMAIL:invite] To={} — invited to '{}'. Accept (POST /api/invitations/accept): {}",
+        "[EMAIL:invite] To={} — invited to '{}': {}/invitations/accept?token={}",
         email,
         orgName,
+        props.frontendUrl(),
         rawToken);
   }
 }

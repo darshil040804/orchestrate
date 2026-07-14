@@ -17,8 +17,9 @@ import { ApiError } from "@/lib/api/client";
 import { login } from "@/lib/api/auth";
 import { mapAuthError } from "@/lib/auth/errors";
 import { loginSchema, type LoginValues } from "@/lib/auth/validation";
+import { isSafeReturnTo } from "@/lib/safe-redirect";
 
-export function LoginForm() {
+export function LoginForm({ returnTo }: { returnTo?: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export function LoginForm() {
     mutationFn: login,
     onSuccess: (data) => {
       queryClient.setQueryData(["auth", "me"], data);
-      router.push("/");
+      router.push(isSafeReturnTo(returnTo) ? returnTo : "/");
     },
     onError: (err) => {
       setServerError(

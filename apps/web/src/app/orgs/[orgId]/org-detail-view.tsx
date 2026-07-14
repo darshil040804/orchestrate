@@ -1,24 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useOrgs } from "@/hooks/use-orgs";
 import { listMembers } from "@/lib/api/orgs";
+import { listInvitations } from "@/lib/api/invitations";
 import { MemberRow } from "./member-row";
+import { InvitationRow } from "./invitation-row";
+import { CreateInvitationForm } from "./create-invitation-form";
 
 export function OrgDetailView({ orgId }: { orgId: string }) {
   const { data: user, isPending: userPending } = useRequireAuth();
   const orgsQuery = useOrgs();
+  const [tab, setTab] = useState<"members" | "invitations">("members");
 
   const myOrg = orgsQuery.data?.find((org) => org.id === orgId);
+  const canManage = myOrg
+    ? myOrg.role === "OWNER" || myOrg.role === "ADMIN"
+    : false;
 
   const membersQuery = useQuery({
     queryKey: ["orgs", orgId, "members"],
     queryFn: () => listMembers(orgId),
     enabled: !!myOrg,
+  });
+
+  const invitationsQuery = useQuery({
+    queryKey: ["orgs", orgId, "invitations"],
+    queryFn: () => listInvitations(orgId),
+    enabled: !!myOrg && canManage && tab === "invitations",
   });
 
   if (userPending || !user) {
@@ -54,7 +69,6 @@ export function OrgDetailView({ orgId }: { orgId: string }) {
     return <p className="text-muted-foreground">Loading…</p>;
   }
 
-  const canManage = myOrg.role === "OWNER" || myOrg.role === "ADMIN";
   const ownerCount =
     membersQuery.data?.filter((m) => m.role === "OWNER").length ?? 0;
 
@@ -73,50 +87,107 @@ export function OrgDetailView({ orgId }: { orgId: string }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {membersQuery.isPending && (
-            <p className="text-muted-foreground">Loading…</p>
-          )}
+      <div className="flex gap-2">
+        <Button
+          variant={tab === "members" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("members")}
+        >
+          Members
+        </Button>
+        {canManage && (
+          <Button
+            variant={tab === "invitations" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTab("invitations")}
+          >
+            Invitations
+          </Button>
+        )}
+      </div>
 
-          {membersQuery.isError && (
-            <ServerErrorBanner message="Something went wrong. Please try again." />
-          )}
+      {tab === "members" && (
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {membersQuery.isPending && (
+              <p className="text-muted-foreground">Loading…</p>
+            )}
 
-          {membersQuery.isSuccess && !canManage && (
-            <ul className="flex flex-col gap-2">
-              {membersQuery.data.map((member) => (
-                <li
-                  key={member.userId}
-                  className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-                >
-                  <span>{member.email}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {member.role}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+            {membersQuery.isError && (
+              <ServerErrorBanner message="Something went wrong. Please try again." />
+            )}
 
-          {membersQuery.isSuccess && canManage && (
-            <ul className="flex flex-col gap-2">
-              {membersQuery.data.map((member) => (
-                <MemberRow
-                  key={member.userId}
-                  orgId={orgId}
-                  member={member}
-                  myRole={myOrg.role}
-                  isLastOwner={member.role === "OWNER" && ownerCount <= 1}
-                />
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+            {membersQuery.isSuccess && !canManage && (
+              <ul className="flex flex-col gap-2">
+                {membersQuery.data.map((member) => (
+                  <li
+                    key={member.userId}
+                    className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                  >
+                    <span>{member.email}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {member.role}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {membersQuery.isSuccess && canManage && (
+              <ul className="flex flex-col gap-2">
+                {membersQuery.data.map((member) => (
+                  <MemberRow
+                    key={member.userId}
+                    orgId={orgId}
+                    member={member}
+                    myRole={myOrg.role}
+                    isLastOwner={member.role === "OWNER" && ownerCount <= 1}
+                  />
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === "invitations" && canManage && (
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Invitations</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <CreateInvitationForm orgId={orgId} myRole={myOrg.role} />
+
+            {invitationsQuery.isPending && (
+              <p className="text-muted-foreground">Loading…</p>
+            )}
+
+            {invitationsQuery.isError && (
+              <ServerErrorBanner message="Something went wrong. Please try again." />
+            )}
+
+            {invitationsQuery.isSuccess && invitationsQuery.data.length === 0 && (
+              <p className="text-muted-foreground">No pending invitations.</p>
+            )}
+
+            {invitationsQuery.isSuccess && invitationsQuery.data.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {invitationsQuery.data.map((invitation) => (
+                  <InvitationRow
+                    key={invitation.id}
+                    orgId={orgId}
+                    invitation={invitation}
+                    myRole={myOrg.role}
+                  />
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
