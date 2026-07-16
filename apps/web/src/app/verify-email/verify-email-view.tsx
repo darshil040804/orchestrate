@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { ApiError } from "@/lib/api/client";
 import { verifyEmail } from "@/lib/api/auth";
@@ -26,7 +27,10 @@ export function VerifyEmailView({ token }: { token?: string }) {
         {!token && <ServerErrorBanner message="This link is invalid." />}
 
         {token && query.isPending && (
-          <p className="text-muted-foreground">Verifying…</p>
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-9 w-32" />
+          </div>
         )}
 
         {token && query.isSuccess && (

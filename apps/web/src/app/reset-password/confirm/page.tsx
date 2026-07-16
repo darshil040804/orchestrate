@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Topbar } from "@/components/shared/topbar";
 import { ResetConfirmForm } from "./reset-confirm-form";
 
 export const metadata: Metadata = { title: "Reset password — Orchestrate" };
@@ -11,8 +12,11 @@ export default async function ResetConfirmPage({
   const { token } = await searchParams;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <ResetConfirmForm token={token} />
-    </main>
+    <div className="flex min-h-screen flex-col">
+      <Topbar logoHref="/" />
+      <main className="flex flex-1 flex-col items-center justify-center p-8">
+        <ResetConfirmForm token={token} />
+      </main>
+    </div>
   );
 }

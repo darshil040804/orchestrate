@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { ApiError } from "@/lib/api/client";
@@ -49,7 +50,17 @@ export function AcceptInvitationView({ token }: { token?: string }) {
   }
 
   if (userPending) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return (
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Accept invitation</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-9 w-full" />
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!user) {
