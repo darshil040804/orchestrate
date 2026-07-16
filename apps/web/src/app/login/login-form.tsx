@@ -19,7 +19,13 @@ import { mapAuthError } from "@/lib/auth/errors";
 import { loginSchema, type LoginValues } from "@/lib/auth/validation";
 import { isSafeReturnTo } from "@/lib/safe-redirect";
 
-export function LoginForm({ returnTo }: { returnTo?: string }) {
+export function LoginForm({
+  returnTo,
+  oauthError,
+}: {
+  returnTo?: string;
+  oauthError?: string;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -33,7 +39,7 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
     mutationFn: login,
     onSuccess: (data) => {
       queryClient.setQueryData(["auth", "me"], data);
-      router.push(isSafeReturnTo(returnTo) ? returnTo : "/");
+      router.push(isSafeReturnTo(returnTo) ? returnTo : "/app");
     },
     onError: (err) => {
       setServerError(
@@ -57,6 +63,7 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
       <CardContent className="flex flex-col gap-4">
         <form onSubmit={onSubmit} noValidate>
           <FieldGroup>
+            {oauthError && <ServerErrorBanner message={mapAuthError(oauthError)} />}
             {serverError && <ServerErrorBanner message={serverError} />}
             <Field data-invalid={!!form.formState.errors.email}>
               <FieldLabel htmlFor="email">Email</FieldLabel>

@@ -54,7 +54,8 @@ public class OAuthAuthenticationSuccessHandler implements AuthenticationSuccessH
       // authentication successful by the time we're in this handler — it structurally cannot be
       // rerouted through the failure handler. Same error code as the GitHub case (shared constant
       // in OAuthErrorCodes), not a second hardcoded literal.
-      response.sendRedirect(props.frontendUrl() + "/?error=" + OAuthErrorCodes.UNVERIFIED_EMAIL);
+      response.sendRedirect(
+          props.frontendUrl() + "/login?error=" + OAuthErrorCodes.UNVERIFIED_EMAIL);
       return;
     }
 
@@ -71,7 +72,7 @@ public class OAuthAuthenticationSuccessHandler implements AuthenticationSuccessH
     response.addHeader(HttpHeaders.SET_COOKIE, access.toString());
     response.addHeader(HttpHeaders.SET_COOKIE, refresh.toString());
 
-    response.sendRedirect(props.frontendUrl() + "/");
+    response.sendRedirect(props.frontendUrl() + "/app");
   }
 
   private String registrationId(Authentication authentication) {

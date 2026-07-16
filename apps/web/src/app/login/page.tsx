@@ -6,13 +6,13 @@ export const metadata: Metadata = { title: "Log in — Orchestrate" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; error?: string }>;
 }) {
-  const { returnTo } = await searchParams;
+  const { returnTo, error } = await searchParams;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <LoginForm returnTo={returnTo} />
+      <LoginForm returnTo={returnTo} oauthError={error} />
     </main>
   );
 }

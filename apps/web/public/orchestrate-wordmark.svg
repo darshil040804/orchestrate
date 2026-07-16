@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174 32" fill="none">
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#4F46E5"/>
+  <circle cx="10" cy="10" r="2.5" fill="white"/>
+  <circle cx="22" cy="10" r="2.5" fill="white"/>
+  <circle cx="16" cy="22" r="2.5" fill="white"/>
+  <path d="M12.5 10h7M11.3 12.2l3.5 6.6M20.7 12.2l-3.5 6.6" stroke="white" stroke-width="1.75" stroke-linecap="round"/>
+  <text x="42" y="21" fill="#18181B" font-family="Geist, Arial, sans-serif" font-size="15" font-weight="650" letter-spacing="-0.3">Orchestrate</text>
+</svg>

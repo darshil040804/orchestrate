@@ -38,8 +38,9 @@ The project is portfolio-ready only when all of the following are true:
 - Google and GitHub OAuth with verified-email account linking.
 - Organizations, OWNER/ADMIN/MEMBER/APPROVER RBAC, membership management, last-owner protection, and invitations.
 - Frontend screens for auth, organizations, members, roles, and invitations.
+- Phase 1's frontend screens (auth, organizations, invitations) are currently undergoing a visual redesign — a shared design system (tokens, dark mode, upgraded shadcn components) has been integrated into `apps/web`, with per-page redesign in progress.
 
-“Complete” records delivered scope; it does not imply production readiness. The audit found only a Spring context-load test, no frontend test framework, console-only email links, a known concurrent refresh-token race, no production profile/deployment, and no application telemetry. These become explicit Phase 2 work instead of being hidden in a late polish phase.
+“Complete” records delivered scope; it does not imply production readiness. The audit found only a Spring context-load test, no frontend test framework, console-only email links, a known concurrent refresh-token race, no production profile/deployment, and no application telemetry. These become explicit Phase 2a and Phase 2b work instead of being hidden in a late polish phase.
 
 ## 3. Target architecture
 
@@ -94,24 +95,33 @@ The definition of done is:
 
 Time ranges are planning estimates, not deadlines. Each phase ends in a deployed, demonstrable increment.
 
-### Phase 2 — Production foundation and quality gate (Weeks 9–13)
+### Phase 2a — Correctness and testing gate (Weeks 9–11)
 
-Close the gap between implemented Phase 1 behavior and a safe production baseline before building the workflow engine.
+Close the correctness and automated-testing gap in implemented Phase 1 behavior before building the workflow engine.
 
 - Add Testcontainers PostgreSQL integration tests for auth, RBAC, invitations, Flyway migrations, and concurrent last-owner/invitation behavior.
 - Repair/replace the generated Windows Maven wrapper path that currently fails before Maven starts; verify documented commands on Windows and Linux CI.
 - Fix refresh-token concurrent replay with row locking or optimistic concurrency and add a deterministic regression test.
-- Add Vitest + Testing Library for frontend logic/components and Playwright for the critical auth/org journey.
+- Add Vitest + Testing Library for frontend logic/components and Playwright test infrastructure covering the critical auth/org journey.
 - Make CI run backend tests, frontend tests, dependency review, secret scanning, coverage reporting, Docker builds, and migration validation. Use coverage trends as a gap detector, not a vanity target; require high coverage on security and workflow state-transition code.
+
+**Exit evidence:** CI exercises real PostgreSQL; critical E2E flows pass; the refresh-token concurrent-replay race has a passing deterministic regression test; zero unresolved high-severity dependency findings.
+
+### Phase 2b — Production readiness (Weeks 12–15, may interleave with Phase 3)
+
+Complete the production-readiness work identified by the Phase 1 audit.
+
 - Replace console email delivery with a provider interface and Resend implementation; retain a local log adapter. Add resend/idempotency handling without exposing account existence.
 - Finalize same-site subdomains, Secure/HttpOnly cookie settings, CSRF protection, trusted-proxy headers, CORS, security headers, rate limits, request-size limits, and production secrets.
 - Add RFC 7807-style error responses, request correlation IDs, structured JSON logs, Actuator readiness/liveness, OpenAPI docs, and architecture decision records.
 - Create production Docker images that run non-root with pinned base images and health checks; remove hot-reload bind mounts from production.
 - Deploy a thin production slice and write runbooks for deployment, rollback, database restore, key rotation, and incident response.
 
-**Exit evidence:** CI exercises real PostgreSQL; critical E2E flows pass; zero unresolved high-severity dependency/security findings; backup restore and rollback are demonstrated; production synthetic checks run continuously.
+Phase 2b does not have to fully complete before Phase 3 starts. Cheap items such as the email swap and cookie/CSRF hardening can happen early because they directly touch existing Phase 1 code. The actual production deploy and full OpenTelemetry observability are more meaningful once Phase 3's worker exists to observe, so those can run alongside or after Phase 3/4.
 
-### Phase 3 — Durable workflow engine (Weeks 14–20)
+**Exit evidence:** backup restore and rollback are demonstrated; production synthetic checks run continuously.
+
+### Phase 3 — Durable workflow engine (Weeks 16–22)
 
 - Model workflows, immutable published versions, typed nodes/edges, executions, node attempts, and an append-only execution event history.
 - Validate graphs on publish: one entry point, supported node configuration, valid references, and no unreachable nodes. Explicitly define loop policy.
@@ -123,7 +133,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 **Exit evidence:** killing the worker mid-run does not lose or duplicate externally visible work; the same idempotency key cannot create two runs; a reproducible k6 workload publishes p50/p95 latency, throughput, and recovery results under `docs/benchmarks/`.
 
-### Phase 4 — Forms and product-quality workflow UX (Weeks 21–25)
+### Phase 4 — Forms and product-quality workflow UX (Weeks 23–27)
 
 - Add versioned public/internal form schemas, server-side validation, conditional fields, expiring submission links, spam/rate protection, and accessibility-complete rendering.
 - Create a polished application shell, organization switcher, responsive workflow list/editor, autosaved drafts with conflict handling, run detail views, and actionable empty/error states.
@@ -132,7 +142,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 **Exit evidence:** a first-time evaluator can build and run the reference workflow unaided; Lighthouse/accessibility findings are addressed; benchmark artifacts compare query and page performance before and after indexing/pagination.
 
-### Phase 5 — Cost-controlled AI decision node (Weeks 26–30)
+### Phase 5 — Cost-controlled AI decision node (Weeks 28–32)
 
 - Add an AI provider interface and one Claude structured-output node supporting classification, extraction, and summarization.
 - Version prompts and schemas with workflow versions. Validate model output before routing; invalid/low-confidence output follows a deterministic fallback or human-review path.
@@ -144,7 +154,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 **Exit evidence:** an evaluation report states dataset size, accuracy/F1 where appropriate, schema-valid rate, p95 latency, and cost per 1,000 requests; budget-exhaustion and provider-outage tests prove deterministic degradation.
 
-### Phase 6 — Human approvals, notifications, and audit (Weeks 31–36)
+### Phase 6 — Human approvals, notifications, and audit (Weeks 33–38)
 
 - Implement approval nodes that durably pause and resume executions; support approve, reject, request changes, reassignment, expiry, and escalation.
 - Make decisions single-use and concurrency-safe. Record actor, timestamp, prior state, reason, and correlation ID in an append-only audit event.
@@ -154,7 +164,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 **Exit evidence:** concurrent approval attempts yield one decision; notification retries do not duplicate messages; the reference workflow demonstrates pause/resume and a complete tamper-evident history.
 
-### Phase 7 — Production integrations (Weeks 37–41)
+### Phase 7 — Production integrations (Weeks 39–43)
 
 - Add inbound and outbound webhooks with HMAC signatures, timestamp/replay protection, idempotency keys, timeouts, retry policies, circuit breaking, and delivery logs.
 - Add one OAuth integration chosen for the reference story—Slack is preferred for notification and approval actions. Do not add a second until the first has contract and failure-path tests.
@@ -163,7 +173,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 **Exit evidence:** contract tests cover provider/webhook behavior; chaos tests exercise timeouts, 429s, invalid signatures, and outages; delivery success rate and retry recovery are visible.
 
-### Phase 8 — Analytics, search, and measurable business impact (Weeks 42–46)
+### Phase 8 — Analytics, search, and measurable business impact (Weeks 44–48)
 
 - Build dashboards for runs, success/failure, queue delay, cycle time, approval wait, automation rate, AI cost, and human overrides.
 - Use PostgreSQL full-text search for workflows, submissions, and audit metadata with tenant filters and cursor pagination. Defer vector search until a measured use case exists.
@@ -173,7 +183,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 **Exit evidence:** dashboards reconcile with source events; analytics queries meet documented p95 targets on seeded data; the case study produces defensible before/after results.
 
-### Phase 9 — Portfolio release and operational proof (Weeks 47–50)
+### Phase 9 — Portfolio release and operational proof (Weeks 49–52)
 
 - Run threat modeling and an OWASP ASVS-inspired review; fix all high findings and document accepted lower risks.
 - Run sustained load, soak, recovery, backup/restore, and dependency-failure tests against a production-like environment.
@@ -186,7 +196,7 @@ Close the gap between implemented Phase 1 behavior and a safe production baselin
 
 ## 7. Measurement plan and resume evidence
 
-Create `docs/benchmarks/README.md` in Phase 2 with environment details, dataset generator, commands, raw results, dates, commit SHA, and interpretation rules. Preserve baselines; never overwrite an old result.
+Create `docs/benchmarks/README.md` in Phase 2a with environment details, dataset generator, commands, raw results, dates, commit SHA, and interpretation rules. Preserve baselines; never overwrite an old result.
 
 | Outcome | Metric | Baseline | Comparison |
 |---|---|---|---|
@@ -210,14 +220,17 @@ Resume bullets must be written only after measurements exist. Preferred shape: *
 
 ## 9. Immediate next milestone
 
-Start Phase 2 with a small sequence of reviewable PRs:
+Start Phase 2a with a small sequence of reviewable PRs:
 
 1. Establish Testcontainers and regression tests for existing auth/RBAC concurrency invariants.
 2. Fix refresh-token concurrency and make CI run all tests.
 3. Add frontend unit/E2E infrastructure and cover the Phase 1 happy path plus authorization failures.
-4. Replace console email with a provider adapter and local fake.
-5. Finalize the production domain/cookie/CSRF design and deploy the health/auth slice.
-6. Add telemetry, runbooks, backup restore, and rollback evidence before Phase 3 schema design begins.
+
+**Phase 2b immediate items:**
+
+1. Replace console email with a provider adapter and local fake.
+2. Finalize the production domain/cookie/CSRF design and deploy the health/auth slice.
+3. Add telemetry, runbooks, backup restore, and rollback evidence alongside or after Phase 3/4 as the worker makes that operational work meaningful.
 
 ## 10. Sources and assumptions
 

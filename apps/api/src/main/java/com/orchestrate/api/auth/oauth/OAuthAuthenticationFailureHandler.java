@@ -37,7 +37,7 @@ public class OAuthAuthenticationFailureHandler implements AuthenticationFailureH
     }
     log.info("OAuth login failed: provider={} errorCode={}", registrationId(request), errorCode);
     response.sendRedirect(
-        props.frontendUrl() + "/?error=" + UriUtils.encode(errorCode, StandardCharsets.UTF_8));
+        props.frontendUrl() + "/login?error=" + UriUtils.encode(errorCode, StandardCharsets.UTF_8));
   }
 
   /**
