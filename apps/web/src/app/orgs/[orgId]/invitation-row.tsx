@@ -2,7 +2,24 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { MoreHorizontal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { ApiError } from "@/lib/api/client";
 import { revokeInvitation, type Invitation } from "@/lib/api/invitations";
@@ -19,13 +36,14 @@ export function InvitationRow({
   myRole: OrganizationRole;
 }) {
   const queryClient = useQueryClient();
-  const [confirmingRevoke, setConfirmingRevoke] = useState(false);
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
 
   const revokeMutation = useMutation({
     mutationFn: () => revokeInvitation(orgId, invitation.id),
     onSuccess: () => {
       setErrorCode(undefined);
+      setRevokeDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["orgs", orgId, "invitations"] });
     },
     onError: (err) => setErrorCode(err instanceof ApiError ? err.code : undefined),
@@ -41,6 +59,9 @@ export function InvitationRow({
   const canManage = iAmOwner || (myRole === "ADMIN" && !targetTouchesOwnerTier);
 
   const revokeDisabled = !canManage || revokeMutation.isPending;
+  const revokeTitle = !canManage
+    ? "Only an owner can revoke this invitation"
+    : undefined;
 
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2">
@@ -52,47 +73,52 @@ export function InvitationRow({
           </span>
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{invitation.role}</span>
-          <span className="text-xs text-muted-foreground">
+          <Badge variant={invitation.role === "OWNER" || invitation.role === "ADMIN" ? "default" : "secondary"}>
+            {invitation.role}
+          </Badge>
+          <Badge variant={invitation.expired ? "destructive" : "warning"}>
             {invitation.expired ? "Expired" : "Pending"}
-          </span>
+          </Badge>
 
-          {!confirmingRevoke ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={revokeDisabled}
-              title={
-                !canManage
-                  ? "Only an owner can revoke this invitation"
-                  : undefined
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" size="icon" aria-label="Invitation actions" />
               }
-              onClick={() => setConfirmingRevoke(true)}
             >
-              Revoke
-            </Button>
-          ) : (
-            <div className="flex items-center gap-1">
-              <Button
+              <MoreHorizontal />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
                 variant="destructive"
-                size="sm"
-                disabled={revokeMutation.isPending}
-                onClick={() => revokeMutation.mutate()}
+                disabled={revokeDisabled}
+                title={revokeTitle}
+                onClick={() => setRevokeDialogOpen(true)}
               >
-                {revokeMutation.isPending ? "Revoking…" : "Confirm?"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmingRevoke(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
+                Revoke invitation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       {errorCode && <ServerErrorBanner message={mapInvitationError(errorCode)} />}
+
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Revoke this invitation?</AlertDialogTitle>
+          <AlertDialogDescription>The invite to {invitation.invitedEmail} will stop working immediately. This can&apos;t be undone.</AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={revokeMutation.isPending}
+              onClick={() => revokeMutation.mutate()}
+            >
+              {revokeMutation.isPending ? "Revoking…" : "Revoke invitation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useOrgs } from "@/hooks/use-orgs";
@@ -80,31 +81,21 @@ export function OrgDetailView({ orgId }: { orgId: string }) {
         </CardHeader>
         <CardContent className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">{myOrg.slug}</p>
-          <p className="text-sm text-muted-foreground">Your role: {myOrg.role}</p>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            Your role: <Badge variant={myOrg.role === "OWNER" || myOrg.role === "ADMIN" ? "default" : "secondary"}>{myOrg.role}</Badge>
+          </p>
           <Link href="/orgs" className="mt-2 text-sm underline underline-offset-4">
             Back to organizations
           </Link>
         </CardContent>
       </Card>
 
-      <div className="flex gap-2">
-        <Button
-          variant={tab === "members" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setTab("members")}
-        >
-          Members
-        </Button>
-        {canManage && (
-          <Button
-            variant={tab === "invitations" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTab("invitations")}
-          >
-            Invitations
-          </Button>
-        )}
-      </div>
+      <Tabs value={tab} onValueChange={(value) => setTab(value as "members" | "invitations")}>
+        <TabsList>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          {canManage && <TabsTrigger value="invitations">Invitations</TabsTrigger>}
+        </TabsList>
+      </Tabs>
 
       {tab === "members" && (
         <Card className="w-full">
@@ -128,9 +119,9 @@ export function OrgDetailView({ orgId }: { orgId: string }) {
                     className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
                   >
                     <span>{member.email}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <Badge variant={member.role === "OWNER" || member.role === "ADMIN" ? "default" : "secondary"}>
                       {member.role}
-                    </span>
+                    </Badge>
                   </li>
                 ))}
               </ul>

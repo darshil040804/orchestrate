@@ -97,9 +97,12 @@ export async function apiFetch<T>(
     throw await toApiError(res);
   }
 
-  if (res.status === 204) {
+  // Any 2xx can come back with no body (e.g. 201 Created from a ResponseEntity<Void>,
+  // not just 204 No Content) — parse only if there's actually content to parse.
+  const text = await res.text();
+  if (text.length === 0) {
     return undefined as T;
   }
 
-  return (await res.json()) as T;
+  return JSON.parse(text) as T;
 }

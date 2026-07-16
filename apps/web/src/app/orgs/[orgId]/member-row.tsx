@@ -2,7 +2,30 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { MoreHorizontal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { ApiError } from "@/lib/api/client";
 import {
@@ -28,7 +51,7 @@ export function MemberRow({
   isLastOwner: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
 
   // Self-targeting is allowed server-side (no self-service carve-out), and a
@@ -53,6 +76,7 @@ export function MemberRow({
     mutationFn: () => removeMember(orgId, member.userId),
     onSuccess: () => {
       setErrorCode(undefined);
+      setRemoveDialogOpen(false);
       invalidate();
     },
     onError: (err) => setErrorCode(err instanceof ApiError ? err.code : undefined),
@@ -71,79 +95,99 @@ export function MemberRow({
     !canManage || targetIsSoleOwner || roleMutation.isPending;
   const removeDisabled = !canManage || targetIsSoleOwner || removeMutation.isPending;
 
+  const changeRoleTitle = !canManage
+    ? "Only an owner can change this member's role"
+    : targetIsSoleOwner
+      ? "An organization must always have at least one owner"
+      : undefined;
+
+  const removeTitle = !canManage
+    ? "Only an owner can remove this member"
+    : targetIsSoleOwner
+      ? "An organization must always have at least one owner"
+      : undefined;
+
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <span className="font-medium">{member.email}</span>
         <div className="flex items-center gap-2">
-          <select
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm disabled:opacity-50"
-            value={member.role}
-            disabled={selectDisabled}
-            title={
-              !canManage
-                ? "Only an owner can change this member's role"
-                : targetIsSoleOwner
-                  ? "An organization must always have at least one owner"
-                  : undefined
-            }
-            onChange={(e) =>
-              roleMutation.mutate(e.target.value as OrganizationRole)
-            }
-          >
-            {ROLE_OPTIONS.map((role) => (
-              // A non-owner ADMIN may freely set MEMBER/APPROVER, but promoting
-              // to ADMIN/OWNER touches the owner tier regardless of the target's
-              // current role — matches OrgService.updateMemberRole's
-              // touchesOwnerTier predicate exactly (current role OR new role).
-              <option
-                key={role}
-                value={role}
-                disabled={!iAmOwner && (role === "OWNER" || role === "ADMIN")}
-              >
-                {role}
-              </option>
-            ))}
-          </select>
+          <Badge variant={member.role === "OWNER" || member.role === "ADMIN" ? "default" : "secondary"}>
+            {member.role}
+          </Badge>
 
-          {!confirmingRemove ? (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={removeDisabled}
-              title={
-                !canManage
-                  ? "Only an owner can remove this member"
-                  : targetIsSoleOwner
-                    ? "An organization must always have at least one owner"
-                    : undefined
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" size="icon" aria-label="Member actions" />
               }
-              onClick={() => setConfirmingRemove(true)}
             >
-              Remove
-            </Button>
-          ) : (
-            <div className="flex items-center gap-1">
-              <Button
+              <MoreHorizontal />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger
+                  disabled={selectDisabled}
+                  title={changeRoleTitle}
+                >
+                  Change role
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={member.role}
+                    onValueChange={(value) =>
+                      roleMutation.mutate(value as OrganizationRole)
+                    }
+                  >
+                    {ROLE_OPTIONS.map((role) => (
+                      // A non-owner ADMIN may freely set MEMBER/APPROVER, but promoting
+                      // to ADMIN/OWNER touches the owner tier regardless of the target's
+                      // current role — matches OrgService.updateMemberRole's
+                      // touchesOwnerTier predicate exactly (current role OR new role).
+                      <DropdownMenuRadioItem
+                        key={role}
+                        value={role}
+                        disabled={!iAmOwner && (role === "OWNER" || role === "ADMIN")}
+                      >
+                        {role}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
                 variant="destructive"
-                size="sm"
-                disabled={removeMutation.isPending}
-                onClick={() => removeMutation.mutate()}
+                disabled={removeDisabled}
+                title={removeTitle}
+                onClick={() => setRemoveDialogOpen(true)}
               >
-                {removeMutation.isPending ? "Removing…" : "Confirm?"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmingRemove(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
+                Remove member
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       {errorCode && <ServerErrorBanner message={mapOrgError(errorCode)} />}
+
+      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Remove this member?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {member.email} will lose access to this organization immediately.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={removeMutation.isPending}
+              onClick={() => removeMutation.mutate()}
+            >
+              {removeMutation.isPending ? "Removing…" : "Remove member"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }

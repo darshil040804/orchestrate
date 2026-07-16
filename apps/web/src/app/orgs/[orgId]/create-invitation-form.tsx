@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ServerErrorBanner } from "@/components/shared/server-error-banner";
 import { ApiError } from "@/lib/api/client";
 import { createInvitation } from "@/lib/api/invitations";
@@ -79,25 +86,32 @@ export function CreateInvitationForm({
         </Field>
         <Field data-invalid={!!form.formState.errors.role}>
           <FieldLabel htmlFor="invite-role">Role</FieldLabel>
-          <select
-            id="invite-role"
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm"
-            {...form.register("role")}
-          >
-            {roleOptions.map((role) => (
-              // Matches InvitationService.createInvitation's touchesOwnerTier
-              // predicate exactly: inviting as ADMIN/OWNER requires the actor
-              // to already be OWNER. No existing target role to consider here
-              // (unlike member-row.tsx's role-change select).
-              <option
-                key={role}
-                value={role}
-                disabled={!iAmOwner && (role === "OWNER" || role === "ADMIN")}
-              >
-                {role}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="invite-role" aria-invalid={!!form.formState.errors.role}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roleOptions.map((role) => (
+                    // Matches InvitationService.createInvitation's touchesOwnerTier
+                    // predicate exactly: inviting as ADMIN/OWNER requires the actor
+                    // to already be OWNER. No existing target role to consider here
+                    // (unlike member-row.tsx's role-change select).
+                    <SelectItem
+                      key={role}
+                      value={role}
+                      disabled={!iAmOwner && (role === "OWNER" || role === "ADMIN")}
+                    >
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           <FieldError
             errors={
               form.formState.errors.role ? [form.formState.errors.role] : undefined
